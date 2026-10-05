@@ -251,8 +251,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .mobile-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
 .mobile-menu .nav-link { font-size: 1.3rem; color: rgba(255,255,255,0.9); }
 
-/* ===== Hero ===== */
-.hero {
+/* ===== Hero — scroll-driven video ===== */
+.hero-video-section {
+  position: relative;
+  height: 300vh; /* scroll distance for the cinematic scrubbing experience */
+}
+.hero-static {
   position: relative;
   min-height: 100vh;
   display: flex;
@@ -260,28 +264,74 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   justify-content: center;
   overflow: hidden;
 }
-.hero-bg {
+.hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Fallback image (always rendered as base layer; video fades in on top) */
+.hero-img-fallback {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
-  transform: scale(1.03);
-  animation: heroScale 8s var(--ease) forwards;
+  z-index: 0;
 }
-@keyframes heroScale { to { transform: scale(1); } }
+/* Video layer */
+.hero-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 0.9s ease;
+  will-change: opacity;
+}
+.hero-video-bg.ready { opacity: 1; }
+/* Subtle overlay — kept light so the video remains visually dominant */
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(4,22,46,0.55) 0%, rgba(4,22,46,0.25) 40%, rgba(4,22,46,0.6) 100%);
-}
-.hero-content {
-  position: relative;
   z-index: 2;
+  background: linear-gradient(180deg, rgba(4,22,46,0.4) 0%, rgba(4,22,46,0.1) 35%, rgba(4,22,46,0.5) 100%);
+}
+/* Minimal loading indicator — thin gold line at bottom */
+.hero-loading-line {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 2px;
+  background: rgba(255,255,255,0.08);
+  z-index: 3;
+  overflow: hidden;
+}
+.hero-loading-line::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -30%;
+  width: 30%; height: 100%;
+  background: var(--gold);
+  animation: loadingSlide 1.4s ease-in-out infinite;
+}
+@keyframes loadingSlide { 0%{left:-30%} 100%{left:100%} }
+/* Hero content — centered, scroll-fade driven via refs */
+.hero-sticky-inner {
+  position: relative;
+  z-index: 3;
   text-align: center;
   max-width: 840px;
   padding: 0 32px;
+  width: 100%;
 }
-.hero h1 {
+.hero-content-wrap {
+  will-change: opacity, transform;
+}
+.hero h1, .hero-video-section h1, .hero-static h1 {
   color: var(--white);
   font-size: clamp(2.3rem, 5.5vw, 4.4rem);
   font-weight: 700;
@@ -297,10 +347,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   margin: 0 auto;
   font-weight: 300;
 }
+/* Entrance animation (plays on mount; scroll-driven fade takes over after video ready) */
 .hero-fade { opacity: 0; transform: translateY(30px); animation: heroFade 1s var(--ease) forwards; }
 .hero-fade-1 { animation-delay: 0.4s; }
 .hero-fade-2 { animation-delay: 0.7s; }
 @keyframes heroFade { to { opacity: 1; transform: translateY(0); } }
+/* Scroll hint */
 .hero-scroll {
   position: absolute;
   bottom: 30px; left: 50%;
@@ -309,11 +361,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  will-change: opacity;
 }
 .hero-scroll-line {
   width: 1px; height: 40px;
